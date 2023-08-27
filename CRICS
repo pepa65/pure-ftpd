@@ -6,25 +6,29 @@ cd pure-ftpd
 # Building (with Virtual Users, Encrypted file transfer, and pure-ftpwho):
 ./autogen.sh 
 ./configure --with-puredb --with-tls --with-ftpwho
+cp _pure-ftpd.conf pure-ftpd.conf
 sudo make install-strip
 # Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem
 
+# Prep users
+sudo groupadd pureftp
+sudo useradd -g ftpgroup -d /dev/null -s /bin/false ftpuser
+
 # Start (chroot everyone, daemonize, list dotfiles, only auth-users, no whois, make home, PureDB-auth):
-/usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
+sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 # Add this to /root/atreboot
 
 # Stop:
 sudo pkill -x pure-ftpd
 
-# Edit users:
-sudo nano /etc/pureftpd.passwd
+# Add/modify users with `pure.csv` file with lines: <username>,<password>
+./purecsv
 
-# Add users by editing users (above) or:
-sudo pure-pw useradd <username> -u ftpuser -d /home/ftpusers/<username>
+# Users can also be edited directly:
+sudo nano /etc/pureftpd.passwd
 
 # Commit changes = make database (no restart needed):
 pure-pw mkdb
 
-# Or easier (csv-filename is pure.csv by default):
-./purecsv [<csv-filename>]
-
+# Add one user:
+sudo pure-pw useradd <username> -u ftpuser -d /home/ftpusers/<username>
