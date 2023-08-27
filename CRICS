@@ -8,7 +8,8 @@ cd pure-ftpd
 ./configure --with-puredb --with-tls --with-ftpwho
 cp _pure-ftpd.conf pure-ftpd.conf
 sudo make install-strip
-# Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem
+# Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem:
+ln -sf /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/cs.f1d.es/cs.f1d.es.crt /etc/ssl/private/pure-ftpd.pem
 
 # Prep users
 sudo groupadd pureftp
