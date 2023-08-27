@@ -22,7 +22,8 @@ passwd=/etc/pureftpd.passwd csv=pure.csv delete=0 purge=0
 [[ $2 ]] &&
 	Err "too many arguments, only -d|--delete | -p|--purge allowed"
 
-! [[ $1 = -d || $1 = --delete || $1 = -p || $1 = --purge ]] &&
+[[ $1 ]] &&
+	! [[ $1 = -d || $1 = --delete || $1 = -p || $1 = --purge ]] &&
 	Err "wrong argument, only -d|--delete | -p|--purge allowed"
 
 [[ $1 ]] &&
@@ -36,7 +37,7 @@ if ((delete))
 then # Start with empty database
 	sudo mv -f --backup=t "$passwd" "$passwd-backup"
 	echo "Database emptied, backup made"
-else
+else # Just backup and keep the current database
 	sudo cp -f --backup=t "$passwd" "$passwd-backup"
 	echo "Database backup made"
 fi
@@ -44,6 +45,8 @@ while IFS=, read -r user pw
 do # Process line
 	[[ -z $user ]] && Err "no username found in line"
 	[[ -z $pw ]] && Err "no password found in line"
+	[[ $user = *' '* ]] && Err "username cannot have spaces"
+	[[ $pw = *' '* ]] && Err "password cannot have spaces"
 	[[ ${user:0:1} = '#' ]] &&
 		echo "Comment: $user,$pw" &&
 		continue
