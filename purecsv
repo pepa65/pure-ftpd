@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set +vx
-# purecsv - Add users to PureFTPd's Virtual User database
+# purecsv - Add users from pure.csv to PureFTPd's Virtual User database
 # Usage: purecsv [-d|--delete]
 #        -d/--delete deletes all current users and starts afresh
+#    pure.csv: [#]<username>,<password>
+#        Lines starting with # are ignored.
 # Required: pureftp[github.com/jedisct1/pure-ftpd](pure-pw)
 
 csv=pure.csv delete=0
@@ -20,6 +22,7 @@ while IFS=, read -r user pw
 do # Process line
 	[[ -z $user ]] && echo "Error: no username found in line" && exit 2
 	[[ -z $pw ]] && echo "Error: no password found in line" && exit 3
+	[[ ${user:0:1} = # ]] && continue
 	! Add $user $pw && sudo pure-pw userdel $user && Add $user $pw
 done <"$csv"
 
