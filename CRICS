@@ -1,0 +1,23 @@
+# Building (with Virtual Users, Encrypted file transfer, and pure-ftpwho):
+./configure --with-puredb --with-tls --with-ftpwho
+sudo make install-strip
+# Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem
+
+# Start (chroot everyone, daemonize, list dotfiles, only auth-users, no whois, make home, PureDB-auth):
+sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
+
+# Stop:
+sudo pkill -x pure-ftpd
+
+# Edit users:
+sudo nano /etc/pureftpd.passwd
+
+# Add users by editing users (above) or:
+sudo pure-pw useradd <username> -u ftpuser -d /home/ftpusers/<username>
+
+# Commit changes = make database (no restart needed):
+pure-pw mkdb
+
+# Or easier (csv-filename is pure.csv by default):
+./purecsv [<csv-filename>]
+

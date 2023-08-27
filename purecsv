@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set +vx
+# purecsv - Add users to PureFTPd's Virtual User database
+# Required: pureftp[github.com/jedisct1/pure-ftpd](pure-pw)
+
+csv=pure.csv
+[[ $1 ]] && csv=$1
+[[ ! -f $csv ]] && echo "Error: csv-file '$csv' not found" && exit 1
+
+Add(){ # 1:user 2:pw
+  echo -e "$2\n$2" |sudo pure-pw useradd $1 -u ftpuser -d /home/ftpusers/$1 &>/dev/null &&
+    echo "User '$1' added to PureFTPd Virtual Users database"
+}
+
+while IFS=, read -r user pw _
+do # Process line
+  [[ -z $user ]] && echo "Error: no username found in line" && exit 2
+  [[ -z $pw ]] && echo "Error: no password found in line" && exit 3
+  ! Add $user $pw && sudo pure-pw userdel $user && Add $user $pw
+done <"$csv"
+
+sudo pure-pw mkdb
+echo "Changes committed"
