@@ -62,8 +62,8 @@ then # Purge if user with home dir not found in passwd
 	shopt -s nullglob
 	for dir in /home/pureftp/*
 	do # For all virtual user directories
-		! grep -q "^${dir##*/}," "$passwd" &&
-			rm -rf "$dir" &&
+		! sudo grep -q "^${dir##*/}," "$passwd" &&
+			sudo rm -rf "$dir" &&
 			echo "Directory '$dir' removed"
 	done
 fi
