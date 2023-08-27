@@ -8,16 +8,16 @@ csv=pure.csv
 [[ ! -f $csv ]] && echo "Error: csv-file '$csv' not found" && exit 1
 
 Add(){ # 1:user 2:pw
-  echo -e "$2\n$2" |sudo pure-pw useradd $1 -u ftpuser -d /home/ftpusers/$1 &>/dev/null &&
-    echo "User '$1' added to PureFTPd Virtual Users database"
+	echo -e "$2\n$2" |sudo pure-pw useradd $1 -u pureftp -d /home/pureftp/$1 &>/dev/null &&
+		echo "User '$1' added to PureFTPd Virtual Users database"
 }
 
 sudo touch /etc/pureftpd.passwd
 while IFS=, read -r user pw
 do # Process line
-  [[ -z $user ]] && echo "Error: no username found in line" && exit 2
-  [[ -z $pw ]] && echo "Error: no password found in line" && exit 3
-  ! Add $user $pw && sudo pure-pw userdel $user && Add $user $pw
+	[[ -z $user ]] && echo "Error: no username found in line" && exit 2
+	[[ -z $pw ]] && echo "Error: no password found in line" && exit 3
+	! Add $user $pw && sudo pure-pw userdel $user && Add $user $pw
 done <"$csv"
 
 sudo pure-pw mkdb && echo "Database changes committed, PureFTPd is now using them"
