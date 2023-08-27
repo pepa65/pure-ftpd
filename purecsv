@@ -41,6 +41,8 @@ else # Just backup and keep the current database
 	sudo cp -f --backup=t "$passwd" "$passwd-backup"
 	echo "Database backup made"
 fi
+ls -l "$passwd"-*
+
 while IFS=, read -r user pw
 do # Process line
 	[[ -z $user ]] && Err "no username found in line"
