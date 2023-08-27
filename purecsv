@@ -1,29 +1,69 @@
 #!/usr/bin/env bash
 set +vx
 # purecsv - Add users from pure.csv to PureFTPd's Virtual User database
-# Usage: purecsv [-d|--delete]
+# Usage: purecsv [-d|--delete | -p|--purge]
 #        -d/--delete deletes all current users and starts afresh
+#        -p/--purge also deletes all unused home directories
 #    pure.csv: [#]<username>,<password>
 #        Lines starting with # are ignored.
 # Required: pureftp[github.com/jedisct1/pure-ftpd](pure-pw)
 
-csv=pure.csv delete=0
-[[ $1 = -d || $1 = --delete ]] && delete=1
-[[ ! -f $csv ]] && echo "Error: csv-file '$csv' not found" && exit 1
+Err(){ # 1:msg
+	echo "Error: $1"
+	exit 1
+}
 
 Add(){ # 1:user 2:pw
 	echo -e "$2\n$2" |sudo pure-pw useradd $1 -u pureftp -d /home/pureftp/$1 &>/dev/null &&
 		echo "User '$1' added to PureFTPd Virtual Users database"
 }
 
-((delete)) && sudo mv -f --backup=t /etc/pureftpd.passwd /etc/pureftpd.passwd_backup ||
-	sudo cp -f --backup=t /etc/pureftpd.passwd /etc/pureftpd.passwd_backup
+passwd=/etc/pureftpd.passwd csv=pure.csv delete=0 purge=0
+[[ $2 ]] &&
+	Err "too many arguments, only -d|--delete | -p|--purge allowed"
+
+! [[ $1 = -d || $1 = --delete || $1 = -p || $1 = --purge ]] &&
+	Err "wrong argument, only -d|--delete | -p|--purge allowed"
+
+[[ $1 ]] &&
+	delete=1
+[[ $1 = -p || $1 = --purge ]] &&
+	purge=1
+[[ ! -f $csv ]] &&
+	Err "csv-file '$csv' not found"
+
+if ((delete))
+then # Start with empty database
+	sudo mv -f --backup=t "$passwd" "$passwd-backup"
+	echo "Database emptied, backup made"
+else
+	sudo cp -f --backup=t "$passwd" "$passwd-backup"
+	echo "Database backup made"
+fi
 while IFS=, read -r user pw
 do # Process line
-	[[ -z $user ]] && echo "Error: no username found in line" && exit 2
-	[[ -z $pw ]] && echo "Error: no password found in line" && exit 3
-	[[ ${user:0:1} = '#' ]] && continue
-	! Add $user $pw && sudo pure-pw userdel $user && Add $user $pw
+	[[ -z $user ]] && Err "no username found in line"
+	[[ -z $pw ]] && Err "no password found in line"
+	[[ ${user:0:1} = '#' ]] &&
+		echo "Comment: $user,$pw" &&
+		continue
+	! Add $user $pw &&
+		sudo pure-pw userdel $user &&
+		echo "User '$user' deleted first" &&
+		Add $user $pw
 done <"$csv"
 
-sudo pure-pw mkdb && echo "Database changes committed, PureFTPd is now using them"
+sudo pure-pw mkdb &&
+	echo "Database changes committed, PureFTPd is now using them" ||
+	Err "failure to commit changes to database"
+
+if ((purge))
+then # Purge if user with home dir not found in passwd
+	shopt -s nullglob
+	for dir in /home/pureftp/*
+	do # For all virtual user directories
+		! grep -q "^${dir##*/}," "$passwd" &&
+			rm -rf "$dir" &&
+			echo "Directory '$dir' removed"
+	done
+fi
