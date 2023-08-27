@@ -1,10 +1,17 @@
+# Prep for building
+apt install automake libssl-dev
+git clone https://github.com/pepa65/pure-ftpd
+cd pure-ftpd
+
 # Building (with Virtual Users, Encrypted file transfer, and pure-ftpwho):
+./autogen.sh 
 ./configure --with-puredb --with-tls --with-ftpwho
 sudo make install-strip
 # Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem
 
 # Start (chroot everyone, daemonize, list dotfiles, only auth-users, no whois, make home, PureDB-auth):
-sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
+/usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
+# Add this to /root/atreboot
 
 # Stop:
 sudo pkill -x pure-ftpd
