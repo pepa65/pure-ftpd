@@ -18,17 +18,17 @@ Err(){ # 1:msg
 Add(){ # 1:section 2:user I:home
 	local dir=$1/$2 user=$2 pw=$(mktemp -u XXXXXXXXXXXX)
 	[[ ${1:0:1} = '*' ]] &&
-		dir=${1:1} user=$dir
+		dir=${1:1}
 	echo -e "$pw\n$pw" |sudo pure-pw useradd $user -u pureftp -d "$home/$dir" &>/dev/null &&
 		echo "User '$user' at '$home/$dir' added to PureFTPd Virtual Users database" &&
 		sudo -u pureftp -g pureftp mkdir -p "$home/$dir" &&
-		entries+=("$section,$user,$pw") &&
+		entries+=("$user,$dir,$pw") &&
 		return
 	# Adding didn't work, delete the existing user
 	! sudo pure-pw userdel $user &&
 		Err "cannot add or delete user '$user'"
 	echo "User '$user' deleted first"
-	Add $section $user
+	Add $1 $2
 }
 
 passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 purge=0
