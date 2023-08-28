@@ -1,35 +1,53 @@
-# Prep for building
+# Setup for Computer Science FTP at CRICS
+
+**There is also a package `pure-ftpd`, but it's default locations are different!**
+
+## Prep for building
+```
 apt install automake libssl-dev
 git clone https://github.com/pepa65/pure-ftpd
 cd pure-ftpd
+```
 
-# Building (with Virtual Users, Encrypted file transfer, and pure-ftpwho):
+## Building (with Virtual Users, Encrypted file transfer, and pure-ftpwho):
+```
 ./autogen.sh 
 ./configure --with-puredb --with-tls --with-ftpwho
 cp _pure-ftpd.conf pure-ftpd.conf
 sudo make install-strip
 # Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem:
 ln -sf /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/cs.f1d.es/cs.f1d.es.crt /etc/ssl/private/pure-ftpd.pem
+```
 
-# Prep users
+## Prep users
+```
 sudo groupadd pureftp
 sudo useradd -g pureftp -d /dev/null -s /bin/false pureftp
+```
 
-# Start (chroot everyone, daemonize, list dotfiles, only auth-users, no whois, make home, PureDB-auth):
+## Start (chroot everyone, daemonize, list dotfiles, only auth-users, no whois, make home, PureDB-auth):
+```
 sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
-# Add this to /root/atreboot
+# Add this to /root/atreboot, perhaps with `pkill -x pure-ftpd` before it
+```
 
-# Stop:
-sudo pkill -x pure-ftpd
+## Stop:
+`sudo pkill -x pure-ftpd`
 
-# Add/modify users with `pure.csv` file with lines: <username>,<password>
-./purecsv
+## Add/modify users with `pure.csv` file with lines: <username>,<password>
+`./purecsv`
 
-# Users can also be edited directly:
-sudo nano /etc/pureftpd.passwd
+## Users can also be edited directly:
+`sudo nano /etc/pureftpd.passwd`
 
-# Commit changes = make database (no restart needed):
-pure-pw mkdb
+## Commit changes = make database (no restart needed):
+`sudo pure-pw mkdb`
 
-# Add one user:
-sudo pure-pw useradd <username> -u pureftp -d /home/pureftp/<username>
+## Add one user:
+```
+sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<section>/<username>
+# With flag `-m` the live database will get updated without doing `pure-pw mkdb`.
+```
+
+## Change/reset user password (also updates the live database):
+`sudo pure-pw passwd <username> -m`
