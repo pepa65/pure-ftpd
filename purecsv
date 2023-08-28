@@ -80,12 +80,13 @@ then # Purge if user with home dir not found in passwd
 		sudo grep -q "^$user," "$passwd" |grep -q ",$section," &&
 			continue
 		sudo rm -rf "$dir" &&
-			echo "Directory '$dir' removed"
+			echo "User directory '$dir' removed"
 	done
 	# If sections are empty, delete them altogether
 	for dir in /home/pureftp/*
 	do # Remove section directory if empty
 		[[ ! ${dir#/home/pureftp/} = */* ]] &&
-			sudo rmdir "$dir"
+			sudo rmdir "$dir" &&
+			echo "Section directory '$dir' removed"
 	done
 fi
