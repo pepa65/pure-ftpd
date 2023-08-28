@@ -38,6 +38,7 @@ passwd=/etc/pureftpd.passwd csv=pure.csv delete=0 purge=0
 if ((delete))
 then # Start with empty database
 	sudo mv -f --backup=t "$passwd" "$passwd-backup"
+	sudo touch "$passwd"
 	echo "Database emptied, backup made"
 else # Just backup and keep the current database
 	sudo cp -f --backup=t "$passwd" "$passwd-backup"
