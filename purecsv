@@ -13,14 +13,14 @@ Err(){ # 1:msg
 	exit 1
 }
 
-Add(){ # 1:user 2:section 3:pw
+Add(){ # 1:user 2:section 3:pw I:home
 	local dir="$2/$1"
 	[[ ${2:0:1} = '*' ]] && dir=${2:1}
-	echo -e "$3\n$3" |sudo pure-pw useradd $1 -u pureftp -d /home/pureftp/$dir &>/dev/null &&
-		echo "User '$1' at '/home/pureftp/$dir' added to PureFTPd Virtual Users database"
+	echo -e "$3\n$3" |sudo pure-pw useradd $1 -u pureftp -d "$home/$dir" &>/dev/null &&
+		echo "User '$1' at '$home/$dir' added to PureFTPd Virtual Users database"
 }
 
-passwd=/etc/pureftpd.passwd csv=pure.csv delete=0 purge=0
+passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 purge=0
 [[ $2 ]] &&
 	Err "too many arguments, only -d|--delete | -p|--purge allowed"
 
@@ -61,6 +61,7 @@ do # Process line
 		sudo pure-pw userdel $user &&
 		echo "User '$user' deleted first" &&
 		Add $user $section $pw
+		sudo -u pureftp mkdir -p "$home/$section/$user"
 done <"$csv"
 
 sudo pure-pw mkdb &&
@@ -70,9 +71,9 @@ sudo pure-pw mkdb &&
 if ((purge))
 then # Purge if user with home dir not found in passwd
 	shopt -s nullglob
-	for dir in /home/pureftp/*/*
+	for dir in $home/*/*
 	do # For all virtual user directories
-		_=${dir#/home/pureftp/} section=${_%/*} user=${section#*/}
+		_=${dir#$home/} section=${_%/*} user=${section#*/}
 		# Skip if not top directory
 		[[ $user = */* ]] &&
 			continue
@@ -83,9 +84,9 @@ then # Purge if user with home dir not found in passwd
 			echo "User directory '$dir' removed"
 	done
 	# If sections are empty, delete them altogether
-	for dir in /home/pureftp/*
+	for dir in $home/*
 	do # Remove section directory if empty
-		[[ ! ${dir#/home/pureftp/} = */* ]] &&
+		[[ ! ${dir#$home/} = */* ]] &&
 			sudo rmdir "$dir" &&
 			echo "Section directory '$dir' removed"
 	done
