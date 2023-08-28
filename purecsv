@@ -79,8 +79,8 @@ then # Purge if user with home dir not found in passwd
 	for dir in $home/*/*
 	do # For all virtual user directories
 		_=${dir#$home/} section=${_%/*} user=${section#*/}
-		# Skip if not top directory
-		[[ $user = */* ]] &&
+		# Skip if section directory or not top user directory
+		[[ -z $user || $user = */* ]] &&
 			continue
 		# If user under given section: skip it
 		sudo grep -q "^$user:.*:$dir/./:" "$passwd" &&
