@@ -85,14 +85,14 @@ then # Purge if user with home dir not found in passwd
 		# If user under given section: skip it
 		sudo grep -q "^$user:.*:$dir/./:" "$passwd" &&
 			continue
-		sudo rm -rf "$dir" 2>/dev/null &&
+		sudo rm -rf "$dir" &&
 			echo "User directory '$dir' removed"
 	done
 	# If sections are empty, delete them altogether
 	for dir in $home/*
 	do # Remove section directory if empty
 		[[ ! ${dir#$home/} = */* ]] &&
-			sudo rmdir "$dir" &&
+			sudo rmdir "$dir" 2>/dev/null &&
 			echo "Section directory '$dir' removed"
 	done
 fi
