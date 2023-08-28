@@ -113,4 +113,5 @@ do # Get data and mail it
 	_=${entry%%,*} mail=${_%/*}@crics.asia user=${_#*/} pw=${entry#*,}
 	txt=$(sed -e "s/USER/$user/" -e "s/PW/$pw/" <<<"$text")
 	mailer -m "$txt" -t $mail -s "Computer Science FTP login" -u mailer@crics.asia -p bjbvwnpjjlhcfhog
+	echo "Login details mailed to $mail"
 done
