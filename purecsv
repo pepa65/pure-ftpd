@@ -97,6 +97,9 @@ then # Purge if user with home dir not found in passwd
 	done
 fi
 
+# Mailing the details out
+read -p "Press Enter to send all the mails (Ctrl-C to quit)"
+
 text="This is an automated mail from CRICS.
 Your information for logging in to the FTP server for Computer Science:
 
