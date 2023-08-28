@@ -97,8 +97,8 @@ then # Purge if user with home dir not found in passwd
 	done
 fi
 
-text="This is an automated mailer from crics.asia.
-Information for logging in to the FTP server for Computer Science:
+text="This is an automated mail from CRICS.
+Your information for logging in to the FTP server for Computer Science:
 
 FTP server: cs.students.crics.asia
 Username: USER
@@ -112,6 +112,6 @@ for entry in "${entries[@]}"
 do # Get data and mail it
 	_=${entry%%,*} mail=${_%/*}@crics.asia user=${_#*/} pw=${entry#*,}
 	txt=$(sed -e "s/USER/$user/" -e "s/PW/$ps/" <<<"$text")
-echo "$txt"
+echo -e "----------------------------------------------------------\n$txt"
 	#mailer -m "$txt" -t $mail -s "Computer Science FTP login" -u mailer@crics.asia -p bjbvwnpjjlhcfhog
 done
