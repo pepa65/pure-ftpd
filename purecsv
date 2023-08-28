@@ -61,7 +61,7 @@ do # Process line
 		sudo pure-pw userdel $user &&
 		echo "User '$user' deleted first" &&
 		Add $user $section $pw
-		sudo -u pureftp  -g pureftp mkdir -p "$home/$section/$user"
+	sudo -u pureftp -g pureftp mkdir -p "$home/$section/$user"
 done <"$csv"
 
 sudo pure-pw mkdb &&
