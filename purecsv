@@ -46,7 +46,7 @@ else # Just backup and keep the current database
 fi
 ls -l "$passwd"-*
 
-while IFS=, read -r -d'\n' user section pw
+while IFS=, read -r -d $'\n' user section pw
 do # Process line
 	[[ -z $user ]] && Err "no username found in line"
 	[[ -z $section ]] && Err "no section found in line"
@@ -86,6 +86,6 @@ then # Purge if user with home dir not found in passwd
 	for dir in /home/pureftp/*
 	do # Remove section directory if empty
 		[[ ! ${dir#/home/pureftp/} = */* ]] &&
-			rmdir "$dir"
+			sudo rmdir "$dir"
 	done
 fi
