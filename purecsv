@@ -22,7 +22,7 @@ Add(){ # 1:section 2:user I:home
 	echo -e "$pw\n$pw" |sudo pure-pw useradd $user -u pureftp -d "$home/$dir" &>/dev/null &&
 		echo "User '$user' at '$home/$dir' added to PureFTPd Virtual Users database" &&
 		sudo -u pureftp -g pureftp mkdir -p "$home/$dir" &&
-		entries+=("$mail,$user,$pw") &&
+		entries+=("$mail/$user,$pw") &&
 		return
 	# Adding didn't work, delete the existing user
 	! sudo pure-pw userdel $user &&
@@ -98,5 +98,7 @@ then # Purge if user with home dir not found in passwd
 fi
 
 for entry in "${entries[@]}"
-do echo "$entry"
+do # Get data and mail it
+	_=${entry%%,*} mail=${_%/*}@crics.asia user=${_#*/} pw=${entry#*,}
+	echo "$mail $user $pw"
 done
