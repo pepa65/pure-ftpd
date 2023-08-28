@@ -46,13 +46,10 @@ else # Just backup and keep the current database
 fi
 ls -l "$passwd"-*
 
-while IFS=, read -r line
+while IFS=, read -r -d'\n' user section pw
 do # Process line
-	[[ -z $line ]] &&
-		continue
-	read user section pw <<<"$line"
 	[[ -z $user ]] && Err "no username found in line"
-	[[ -z $section ]] && echo "no section found in line"
+	[[ -z $section ]] && Err "no section found in line"
 	[[ -z $pw ]] && Err "no password found in line"
 	[[ $user = *' '* ]] && Err "username cannot have spaces"
 	[[ $section = *' '* ]] && Err "section cannot have spaces"
@@ -76,6 +73,9 @@ then # Purge if user with home dir not found in passwd
 	for dir in /home/pureftp/*/*
 	do # For all virtual user directories
 		_=${dir#/home/pureftp/} section=${_%/*} user=${section#*/}
+		# Skip if not top directory
+		[[ $user = */* ]] &&
+			continue
 		# If user under given section: skip it
 		sudo grep -q "^$user," "$passwd" |grep -q ",$section," &&
 			continue
