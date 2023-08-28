@@ -83,7 +83,7 @@ then # Purge if user with home dir not found in passwd
 		[[ $user = */* ]] &&
 			continue
 		# If user under given section: skip it
-		sudo grep -q "^$user," "$passwd" |grep -q ",$section," &&
+		sudo grep -q "^$user:.*:$dir/./:" "$passwd" &&
 			continue
 		sudo rm -rf "$dir" &&
 			echo "User directory '$dir' removed"
