@@ -55,3 +55,7 @@ sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<section>
 
 ## Change/reset user password (also updates the live database):
 `sudo pure-pw passwd <username> -m`
+
+## See who is active:
+`sudo pure-ftpwho`
+
