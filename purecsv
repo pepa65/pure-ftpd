@@ -4,8 +4,10 @@ set +vx
 # Usage: purecsv [-d|--delete | -p|--purge]
 #        -d/--delete deletes all current users and starts afresh
 #        -p/--purge also deletes all unused home directories
-#    pure.csv: [#]<username>,<section>,<password>
+#    pure.csv: [#]<section>,[<username>],<password>
 #        Lines starting with # are ignored.
+#        Lines with no username take <section> as a username & home directory.
+#        Never should any <section> also be a <username> under any section!
 # Required: pureftp[github.com/jedisct1/pure-ftpd](pure-pw)
 
 Err(){ # 1:msg
@@ -13,11 +15,18 @@ Err(){ # 1:msg
 	exit 1
 }
 
-Add(){ # 1:user 2:section 3:pw I:home
-	local dir="$2/$1"
-	[[ ${2:0:1} = '*' ]] && dir=${2:1}
-	echo -e "$3\n$3" |sudo pure-pw useradd $1 -u pureftp -d "$home/$dir" &>/dev/null &&
-		echo "User '$1' at '$home/$dir' added to PureFTPd Virtual Users database"
+Add(){ # 1:section 2:user 3:pw I:home
+	local dir=$1 user=$1
+	[[ $2 ]] &&
+		dir=$1/$2 user=$2
+	echo -e "$3\n$3" |sudo pure-pw useradd $user -u pureftp -d "$home/$dir" &>/dev/null &&
+		echo "User '$user' at '$home/$dir' added to PureFTPd Virtual Users database" &&
+		return
+	# Adding didn't work, delete the existing user
+	! sudo pure-pw userdel $user &&
+		Err "cannot add or delete user '$user'"
+	echo "User '$user' deleted first"
+	Add $section "$user" $pw
 }
 
 passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 purge=0
@@ -46,21 +55,17 @@ else # Just backup and keep the current database
 fi
 ls -l "$passwd"-*
 
-while IFS=, read -r -d $'\n' user section pw
+while IFS=, read -r -d $'\n' section user pw
 do # Process line
-	[[ -z $user ]] && Err "no username found in line"
-	[[ -z $section ]] && Err "no section found in line"
-	[[ -z $pw ]] && Err "no password found in line"
-	[[ $user = *' '* ]] && Err "username cannot have spaces"
-	[[ $section = *' '* ]] && Err "section cannot have spaces"
-	[[ $pw = *' '* ]] && Err "password cannot have spaces"
-	[[ ${user:0:1} = '#' ]] &&
-		echo "Comment: $user,$section,$pw" &&
+	[[ ${section:0:1} = '#' ]] &&
+		echo "Comment: $section,$user,$pw" &&
 		continue
-	! Add $user $section $pw &&
-		sudo pure-pw userdel $user &&
-		echo "User '$user' deleted first" &&
-		Add $user $section $pw
+	[[ -z $section ]] && Err "no section found in line"
+	[[ $section = *' '* ]] && Err "section cannot have spaces"
+	[[ $user = *' '* ]] && Err "username cannot have spaces"
+	[[ -z $pw ]] && Err "no password found in line"
+	[[ $pw = *' '* ]] && Err "password cannot have spaces"
+	Add $section "$user" $pw
 	sudo -u pureftp -g pureftp mkdir -p "$home/$section/$user"
 done <"$csv"
 
