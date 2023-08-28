@@ -55,9 +55,9 @@ do # Process line
 	[[ $section = *' '* ]] && Err "section cannot have spaces"
 	[[ $pw = *' '* ]] && Err "password cannot have spaces"
 	[[ ${user:0:1} = '#' ]] &&
-		echo "Comment: $user,$secion,$pw" &&
+		echo "Comment: $user,$section,$pw" &&
 		continue
-	! Add $user $session $pw &&
+	! Add $user $section $pw &&
 		sudo pure-pw userdel $user &&
 		echo "User '$user' deleted first" &&
 		Add $user $section $pw
