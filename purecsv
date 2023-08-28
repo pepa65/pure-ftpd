@@ -28,7 +28,7 @@ Add(){ # 1:section 2:user I:home
 	! sudo pure-pw userdel $user &&
 		Err "cannot add or delete user '$user'"
 	echo "User '$user' deleted first"
-	Add $section $user $pw
+	Add $section $user
 }
 
 passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 purge=0
@@ -66,9 +66,7 @@ do # Process line
 	[[ $section = *' '* ]] && Err "section cannot have spaces"
 	[[ -z $user ]] && Err "no user found in line"
 	[[ $user = *' '* ]] && Err "username cannot have spaces"
-	[[ -z $pw ]] && Err "no password found in line"
-	[[ $pw = *' '* ]] && Err "password cannot have spaces"
-	Add $section $user $pw
+	Add $section $user
 done <"$csv"
 
 sudo pure-pw mkdb &&
