@@ -46,8 +46,11 @@ else # Just backup and keep the current database
 fi
 ls -l "$passwd"-*
 
-while IFS=, read -r user section pw
+while IFS=, read -r line
 do # Process line
+	[[ -z $line ]] &&
+		continue
+	read user section pw <<<"$line"
 	[[ -z $user ]] && Err "no username found in line"
 	[[ -z $section ]] && echo "no section found in line"
 	[[ -z $pw ]] && Err "no password found in line"
