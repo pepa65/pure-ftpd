@@ -1,6 +1,10 @@
 # Setup for Computer Science FTP at CRICS
 
-**There is also a package `pure-ftpd`, but it's default locations are different!**
+* Repo additions: `CRICS _pure-ftpd.conf purecsv`
+  - `CRICS`: Instructions for install and usage.
+  - `_pure-ftpd.conf`: Configuration for Virtual Users.
+  - `purecsv`: Setup virtual accounts and mail out details.
+* **There is also a package `pure-ftpd`, but it's default locations are different!**
 
 ## Prep for building
 ```
@@ -16,7 +20,7 @@ cd pure-ftpd
 cp _pure-ftpd.conf pure-ftpd.conf
 sudo make install-strip
 # Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem:
-ln -sf /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/cs.f1d.es/cs.f1d.es.crt /etc/ssl/private/pure-ftpd.pem
+ln -sf /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/cs.students.crics.asia/cs.students.crics.asia.crt /etc/ssl/private/pure-ftpd.pem
 ```
 
 ## Prep users

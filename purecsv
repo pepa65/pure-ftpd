@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set +vx
-# purecsv - Make virtual FTP accounts and mail out emails to users @crics.asia
+# purecsv - Make virtual FTP accounts and mail out details to users @crics.asia
 # Usage: purecsv [-d|--delete | -p|--purge]
 #        -d/--delete:  Delete all current users and start the database afresh.
 #        -p/--purge:   Also deletes no longer used home directories.
 #        Without options current users' passwords & details are preserved.
-#    pure.csv: [#][*]<section>,<username>
+#    Processes `pure.csv` (in the current directory): [#][*]<section>,<username>
 #        Lines starting with # are ignored.
-#        Lines starting with * make user owner of section directory.
+#        Lines starting with * make <username> owner of <section> directory.
 # Required: pureftp[github.com/pepa65/pure-ftpd](pure-pw) grep sed
 #           mailer[github.com/pepa65/mailer] coreutils(mkdir rm mv cp mktemp touch)
 
@@ -36,6 +36,7 @@ Add(){ # 1:section 2:user I:home
 	Add $1 $2
 }
 
+# Check commandline argument
 passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 purge=0
 [[ $2 ]] &&
 	Err "too many arguments, only -d|--delete | -p|--purge allowed"
