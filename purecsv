@@ -78,14 +78,14 @@ then # Purge if user with home dir not found in passwd
 	shopt -s nullglob
 	for dir in $home/*/*
 	do # For all virtual user directories
-		_=${dir#$home/} section=${_%/*} user=${section#*/}
+		_=${dir#$home/} section=${_%/*} user=${_#*/}
 		# Skip if section directory or not top user directory
 		[[ -z $user || $user = */* ]] &&
 			continue
 		# If user under given section: skip it
 		sudo grep -q "^$user:.*:$dir/./:" "$passwd" &&
 			continue
-		sudo rm -rf "$dir" &&
+		sudo rm -rf "$dir" 2>/dev/null &&
 			echo "User directory '$dir' removed"
 	done
 	# If sections are empty, delete them altogether
