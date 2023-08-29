@@ -59,3 +59,6 @@ sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<section>
 ## See who is active:
 `sudo pure-ftpwho`
 
+## List contents of live database (compile `lspdb.v`):
+`sudo lspdb /etc/pureftpd.pdb`
+
