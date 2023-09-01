@@ -1,4 +1,4 @@
-// lspdb.v - Print all "key: value" pairs in a given PureDB .pdb file
+// lspdb.v - Print all "key:value" pairs in a given PureDB .pdb file
 // Build for local use: v -cc clang -prod lspdb.v
 // Build for wider distribution: v -cc clang -cflags -static -prod lspdb.v
 
@@ -42,7 +42,7 @@ fn main(){
 	for addr < db.len {
 		len = getquad(db, addr)
 		out(db, addr+4, len)
-		print(': ')
+		print(':')
 		addr += 4+len
 		len = getquad(db, addr)
 		out(db, addr+4, len)
