@@ -1,3 +1,5 @@
+.netrc
+pure.csv
 *.a
 *.log
 *.o
