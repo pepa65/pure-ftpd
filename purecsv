@@ -24,7 +24,7 @@ Add(){ # 1:section 2:user I:home
 	[[ $1 = '*' ]] &&
 		dir= user=pureftp ||
 		dir=/$dir
-	echo -e "$pw\n$pw" |sudo pure-pw useradd $user -u pureftp -d "$home$dir" &>/dev/null &&
+	echo -e "$pw\n$pw" |sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null &&
 		echo "User '$user' at '$home$dir' added to PureFTPd Virtual Users database" &&
 		sudo -u pureftp -g pureftp mkdir -p "$home$dir" &&
 		entries+=("$mail/$user,$pw") &&
@@ -34,10 +34,10 @@ Add(){ # 1:section 2:user I:home
 		echo "User '$user' unchanged" &&
 		return
 	# Delete user from database and then add it
-	! sudo pure-pw userdel $user &&
+	! sudo pure-pw userdel "$user" &&
 		Err "cannot add or delete user '$user'"
 	echo "User '$user' deleted first"
-	Add $1 $2
+	Add "$1" "$2"
 }
 
 # Check commandline argument
@@ -76,7 +76,7 @@ do # Process line
 	[[ $section = *' '* ]] && Err "section cannot have spaces"
 	[[ -z $user ]] && Err "no user found in line"
 	[[ $user = *' '* ]] && Err "username cannot have spaces"
-	Add $section $user
+	Add "$section" "$user"
 done <"$csv"
 
 sudo pure-pw mkdb &&
