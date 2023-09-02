@@ -4,8 +4,10 @@
   - `README.md`: Instructions for install and usage.
   - `_pure-ftpd.conf`: Configuration for Virtual Users.
   - `purecsv`: Setup virtual accounts and mail out details.
-* **There is also a `.deb` package `pure-ftpd`, but it's default locations are different!**
+  - `lspdb.v` and `lspdb.c`: Sources for `lspdb`.
+  - `lspdb`: Binary to list all entries in a PureDB database like `/etc/pureftpd.pdb`.
 * Files that will be added on the user side: `.netrc` and `pure.csv`
+* **There is also a `.deb` package `pure-ftpd`, but it's default locations are different!**
 
 ## Prep for building
 ```
