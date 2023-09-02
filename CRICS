@@ -59,8 +59,8 @@ sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<section>
 ## See who is active:
 `sudo pure-ftpwho`
 
-## List contents of live database (compile `lspdb.v`):
+## List contents of live database (compile `lspdb.v` or `lspdb.c`):
 `sudo lspdb /etc/pureftpd.pdb`
 
-## Restoring text database from running database (compile `lspdb.v`):
+## Restoring text database from running database (compile `lspdb.v` or `lspdb.c`):
 `sudo lspdb /etc/pureftpd.pdb >/etc/pureftpd.passwd`
