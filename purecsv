@@ -6,8 +6,9 @@ set +vx
 #        -p/--purge:   Also deletes no longer used home directories.
 #        Without options current users' passwords & details are preserved.
 #    Processes `pure.csv` (in the current directory): [#][*]<section>,<username>
-#        Lines starting with # are ignored.
-#        Lines starting with * make <username> owner of <section> directory.
+#        Lines starting with '#' are ignored.
+#        Lines starting with '*' make <username> owner of <section> directory.
+#        If <section> is just '*' then superuser 'pureftp' is owner of '/home/pureftp'.
 # Required: pureftp[github.com/pepa65/pure-ftpd](pure-pw) grep sed
 #           mailer[github.com/pepa65/mailer] coreutils(mkdir rm mv cp mktemp touch)
 
@@ -20,9 +21,12 @@ Add(){ # 1:section 2:user I:home
 	local dir=$1/$2 user=$2 pw=$(mktemp -u XXXXXXXXXXXX) mail=$2
 	[[ ${1:0:1} = '*' ]] &&
 		dir=${1:1} user=$dir
-	echo -e "$pw\n$pw" |sudo pure-pw useradd $user -u pureftp -d "$home/$dir" &>/dev/null &&
-		echo "User '$user' at '$home/$dir' added to PureFTPd Virtual Users database" &&
-		sudo -u pureftp -g pureftp mkdir -p "$home/$dir" &&
+	[[ $1 = '*' ]] &&
+		dir= user=pureftp ||
+		dir=/$dir
+	echo -e "$pw\n$pw" |sudo pure-pw useradd $user -u pureftp -d "$home$dir" &>/dev/null &&
+		echo "User '$user' at '$home$dir' added to PureFTPd Virtual Users database" &&
+		sudo -u pureftp -g pureftp mkdir -p "$home$dir" &&
 		entries+=("$mail/$user,$pw") &&
 		return
 	# Adding didn't work, perhaps delete the existing user

@@ -62,8 +62,13 @@ sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 * Have 1 line with the SMTP login email, like: `login EMAIL`
 * Have 1 line with the SMTP password, like: `password PASSWORD`
 
-### Add/modify users with `pure.csv` file with lines: <username>,<password>
+### Add/modify users with `pure.csv` file with lines: <section>,<username>
 `./purecsv`
+
+* If the line is prepended by `#` it is ignored.
+* If the line is prepended by `*` the login covers the whole section and all users in it.
+* If the line has `*` as its section, it designates the superuser `pureftp` over all sections.
+* Usernames have to be unique! (Otherwise the last one wins.)
 
 ### Users can also be edited directly
 `sudo nano /etc/pureftpd.passwd`
