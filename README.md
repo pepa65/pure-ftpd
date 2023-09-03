@@ -1,10 +1,10 @@
 # Setup for Computer Science FTP at CRICS
 
-* Repo additions: `README.md _pure-ftpd.conf purecsv lspdb.v lspdb.c lspdb`
+* Repo additions: `README.md _pure-ftpd.conf purecsv lspdb.v lspdb.zig lspdb.c lspdb`
   - `README.md`: Instructions for install and usage.
   - `_pure-ftpd.conf`: Configuration for Virtual Users.
   - `purecsv`: Setup virtual accounts and mail out details.
-  - `lspdb.v` and `lspdb.c`: Sources for `lspdb`.
+  - `lspdb.v`, `lspdb.zig` and `lspdb.c`: Sources for `lspdb`.
   - `lspdb`: Binary to list all entries in a PureDB database like `/etc/pureftpd.pdb`.
 * Files that will be added on the user side: `.netrc` and `pure.csv`
 * **There is also a `.deb` package `pure-ftpd`, but it's default locations are different!**
