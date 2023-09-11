@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set +vx
 # purecsv - Make virtual FTP accounts and optionally mail out details
-# Usage: purecsv [-d|--delete | -n|--norun]
+# Usage: purecsv [-d|--delete] [-n|--norun]
 #        -n/--norun:   Only display what would have been done
 #        -d/--delete:  Delete all current users and start the database afresh.
 #        Otherwise current users' details are preserved (unless given new).
@@ -15,12 +15,14 @@ Err(){ # 1:msg
 	exit 1
 }
 
-Add(){ # 1:dir 2:user 3:email I:home,norun,delete O:entries
+Add(){ # 1:dir 2:user 3:email I:home,norun,delete,passwd O:entries
 	local dir=$1 user=$2 mail=$3 pw=$(mktemp -u XXXXXXXXXXXX)  # pw: No commas!
 	if ((norun))
 	then # Pretend
-		echo "Would have added '$user' on '$dir' and created it"
-		entries+=("$mail,$user,$dir,$pw")
+		grep -q "^$user:" "$passwd" &&
+			echo "Would have added '$user' on '$dir' and created it" &&
+			entries+=("$mail,$user,$dir,$pw") ||
+			echo "Username '$user' already exists"
 	else # Execute
 		if echo -e "$pw\n$pw" |
 				sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null
@@ -36,17 +38,23 @@ Add(){ # 1:dir 2:user 3:email I:home,norun,delete O:entries
 
 # Check commandline argument
 passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 norun=0
-[[ $2 ]] &&
-	Err "too many arguments, only -d/--delete / -n/--norun allowed"
-
-[[ $1 ]] &&
-	! [[ $1 = -d || $1 = --delete || $1 = -n || $1 = --norun ]] &&
-	Err "wrong argument, only -d|--delete | -n|--norun allowed"
-
 [[ $1 = -d || $1 = --delete ]] &&
+	shift &&
 	delete=1
 [[ $1 = -n || $1 = --norun ]] &&
+	shift &&
 	norun=1
+if [[ $1 = -d || $1 = --delete ]]
+then
+	shift
+	((delete)) &&
+		delete=1 ||
+		Err "flag -d/--delete given twice!"
+fi
+
+[[ $1 ]] &&
+	Err "wrong argument, only -d/--delete / -n/--norun allowed (once)"
+
 [[ ! -f $csv ]] &&
 	Err "csv-file '$csv' not found"
 
