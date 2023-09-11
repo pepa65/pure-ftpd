@@ -20,7 +20,7 @@ Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd O:entries
 	if ((norun))
 	then # Pretend
 		! sudo grep -q "^$user:" "$passwd" &&
-			echo "Would have added '$user' on '$dir' and created it" &&
+			echo "Would have added '$user' on '$dir' and created the directory" &&
 			entries+=("$user,$dir,$pw,$mail") ||
 			echo "Username '$user' already exists"
 	else # Execute
@@ -124,7 +124,7 @@ The IT Team
 
 for entry in "${entries[@]}"  # "<user>,<dir>,<pw>,<mail>"
 do # Get data and mail it
-	IFS=, read -r mail user dir pw mail <<<"$entry"
+	IFS=, read -r user dir pw mail <<<"$entry"
 	if ((norun))
 	then # Pretend
 		[[ $mail ]] &&
