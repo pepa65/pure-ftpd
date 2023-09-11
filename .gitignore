@@ -1,5 +1,5 @@
 .netrc
-pure.csv
+*.csv
 *.a
 *.log
 *.o

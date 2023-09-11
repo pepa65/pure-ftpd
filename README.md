@@ -59,23 +59,30 @@ sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 
 ## Manage Virtual Users
 
-### Prep `.netrc` which is used in `purecsv`
+### Prep `.netrc` which is used in `purecsv` (mailing account details)
 * Needed if details need to be emailed out (alternative: output passwords to stdout)
 * Have 1 line with the bare DOMAIN (no scheme), like: `machine DOMAIN`
 * Have 1 line with the SMTP login user, like: `login USERNAME`
 * Have 1 line with the SMTP password, like: `password PASSWORD`
 
-### Add/modify users with `pure.csv` file with lines: <directory>,<username>,<email>
-`./purecsv`
+### Add/modify users with `purecsv` and `pure.csv`
 
-* If the line is prepended by `#` it is ignored as a comment.
-* `<dir>` is the directory that user `<username>` has authorization for. Examples:
+#### Configfile `pure.csv`
+* Lines with: <directory>,<username>,<email>
+* `<directory>` is the directory that user `<username>` has authorization for. Examples:
   - `/`: Covering all subdirectories (superadmin).
   - `/cs7`: User with authorization over everything under `/cs7` (teacher).
   - `/cs9/int`: User with authorization over `/cs9/int` (student).
-* Every `<username>` has to be unique! (Otherwise the last one wins.)
+* If the line is prepended by `#` it is ignored as a comment.
+* Every `<username>` has to be unique! (Only the first gets added.)
 * If `<email>` is filled in, an email is sent with the details for the virtual user.
   Otherwise, the password will be printed to stdout.
+
+#### Run `purecsv`
+* Usage: `./purecsv [-d|--delete | -n|--norun]`
+* Option `-d`/`--delete`: Backup and then empty out the existing database.
+* Option `-n`/`--norun`: Just display what would have happened.
+* Run: `./purecsv` (Only new users are added, existing users are left alone.)
 
 ### Users can also be edited directly
 `sudo nano /etc/pureftpd.passwd`

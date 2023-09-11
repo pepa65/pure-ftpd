@@ -15,25 +15,22 @@ Err(){ # 1:msg
 	exit 1
 }
 
-Add(){ # 1:dir 2:user 3:email I:home,norun,delete
+Add(){ # 1:dir 2:user 3:email I:home,norun,delete O:entries
 	local dir=$1 user=$2 mail=$3 pw=$(mktemp -u XXXXXXXXXXXX)  # pw: No commas!
 	if ((norun))
-	then echo "Would have added: Username:$user Password:$pw Email:$mail Dir:$dir"
-	else
-		echo -e "$pw\n$pw" |sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null &&
-			echo "User '$user' at '$home$dir' added to PureFTPd Virtual Users database" &&
-			sudo -u pureftp -g pureftp mkdir -p "$home$dir" &&
-			entries+=("$mail,$user,$dir,$pw") &&
-			return
-		# Adding virtual user didn't work, so try to delete a pre-existing user
-		((!delete)) &&
-			echo "Username '$user' unchanged!" &&
-			return
-		# Delete user from database and then add it
-		! sudo pure-pw userdel "$user" &&
-			Err "cannot add or delete user '$user'"
-		echo "Old username '$user' deleted first"
-		Add "$1" "$2" "$3"
+	then # Pretend
+		echo "Would have added '$user' on '$dir' and created it"
+		entries+=("$mail,$user,$dir,$pw")
+	else # Execute
+		if echo -e "$pw\n$pw" |
+				sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null
+		then # Adding successful
+			echo "User '$user' at '$home$dir' added to PureFTPd Virtual Users database"
+			sudo -u pureftp -g pureftp mkdir -p "$home$dir"
+			entries+=("$mail,$user,$dir,$pw")
+		else # Error adding the user
+			echo "Unable to add username '$user' on '$dir', probably a duplicate user!"
+		fi
 	fi
 }
 
@@ -54,11 +51,11 @@ passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 norun=0
 	Err "csv-file '$csv' not found"
 
 if ((norun))
-then
+then # Pretend
 	((delete)) &&
 		echo "Would have backed up '$passwd' to '$passwd-backup' and emptied the database" ||
 		echo "Would have backed up '$passwd' to '$passwd-backup'"
-else
+else # Execute
 	if ((delete))
 	then # Start with empty database
 		sudo mv -f --backup=t "$passwd" "$passwd-backup"
@@ -68,8 +65,8 @@ else
 		sudo cp -f --backup=t "$passwd" "$passwd-backup"
 		echo "Database backup made"
 	fi
+	ls -l "$passwd"-*
 fi
-ls -l "$passwd"-*
 
 while IFS=, read -r -d $'\n' dir user email
 do # Process line
@@ -88,8 +85,9 @@ do # Process line
 done <"$csv"
 
 if ((norun))
-then echo "Would have commit changes to PureFTPd"
-else
+then # Pretend
+	echo "Would have commit changes to PureFTPd"
+else # Execute
 	sudo pure-pw mkdb &&
 		echo "Database changes committed, PureFTPd is now using them" ||
 		Err "failure to commit changes to database"
@@ -120,11 +118,11 @@ for entry in "${entries[@]}"  # "<user>,<dir>,<pw>,<mail>"
 do # Get data and mail it
 	IFS=, read -r mail user dir pw mail <<<"$entry"
 	if ((norun))
-	then
+	then # Pretend
 		[[ $mail ]] &&
-			echo "Would have mailed: '$user' on '$dir' has password '$pw' to: $mail" ||
-			echo "Would have displayed: '$user' on '$dir' has password '$pw' to: $mail"
-	else
+			echo "Would have mailed the password for '$user' on '$dir' to: $mail" ||
+			echo "Would have displayed the password for '$user' on '$dir'"
+	else # Execute
 		if [[ $mail ]]
 		then
 			txt=$(sed -e "s/USER/$user/" -e "s/PW/$pw/" <<<"$text")
