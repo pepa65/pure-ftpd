@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 set +vx
-# purecsv - Make virtual FTP accounts and mail out details to users @crics.asia
-# Usage: purecsv [-d|--delete | -p|--purge]
+# purecsv - Make virtual FTP accounts and optionally mail out details
+# Usage: purecsv [-d|--delete]
 #        -d/--delete:  Delete all current users and start the database afresh.
-#        -p/--purge:   Also deletes no longer used home directories.
-#        Without options current users' passwords & details are preserved.
-#    Processes `pure.csv` (in the current directory): [#][*]<section>,<username>
-#        Lines starting with '#' are ignored.
-#        Lines starting with '*' make <username> owner of <section> directory.
-#        If <section> is just '*' then superuser 'pureftp' is owner of '/home/pureftp'.
+#        Otherwise current users' details are preserved (unless given new).
+#    Processes `pure.csv` (in PWD): [#]<directory>,<username>,[<email>]
+#        Lines starting with '#' are ignored. Always start <directory> with '/'.
 # Required: pureftp[github.com/pepa65/pure-ftpd](pure-pw) grep sed
 #           mailer[github.com/pepa65/mailer] coreutils(mkdir rm mv cp mktemp touch)
 
@@ -17,33 +14,28 @@ Err(){ # 1:msg
 	exit 1
 }
 
-Add(){ # 1:section 2:user I:home
-	local dir=$1/$2 user=$2 pw=$(mktemp -u XXXXXXXXXXXX) mail=$2
-	[[ ${1:0:1} = '*' ]] &&
-		dir=${1:1} user=$dir
-	[[ $1 = '*' ]] &&
-		dir= user=pureftp ||
-		dir=/$dir
+Add(){ # 1:dir 2:user 3:email I:home,delete
+	local dir=$1 user=$2 mail=$3 pw=$(mktemp -u XXXXXXXXXXXX)  # pw: No commas!
 	echo -e "$pw\n$pw" |sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null &&
 		echo "User '$user' at '$home$dir' added to PureFTPd Virtual Users database" &&
 		sudo -u pureftp -g pureftp mkdir -p "$home$dir" &&
-		entries+=("$mail/$user,$pw") &&
+		entries+=("$mail,$user,$dir,$pw") &&
 		return
-	# Adding didn't work, perhaps delete the existing user
+	# Adding virtual user didn't work, so try to delete a pre-existing user
 	((!delete)) &&
-		echo "User '$user' unchanged" &&
+		echo "Username '$user' unchanged!" &&
 		return
 	# Delete user from database and then add it
 	! sudo pure-pw userdel "$user" &&
 		Err "cannot add or delete user '$user'"
-	echo "User '$user' deleted first"
-	Add "$1" "$2"
+	echo "Old username '$user' deleted first"
+	Add "$1" "$2" "$3"
 }
 
 # Check commandline argument
 passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 purge=0
 [[ $2 ]] &&
-	Err "too many arguments, only -d|--delete | -p|--purge allowed"
+	Err "too many arguments, only -d/--delete / -p/--purge allowed"
 
 [[ $1 ]] &&
 	! [[ $1 = -d || $1 = --delete || $1 = -p || $1 = --purge ]] &&
@@ -67,45 +59,25 @@ else # Just backup and keep the current database
 fi
 ls -l "$passwd"-*
 
-while IFS=, read -r -d $'\n' section user
+while IFS=, read -r -d $'\n' dir user email
 do # Process line
-	[[ ${section:0:1} = '#' ]] &&
-		echo "Comment: $section,$user" &&
+	[[ ${dir:0:1} = '#' ]] &&
+		echo "Comment: $dir,$user,$email" &&
 		continue
-	[[ -z $section ]] && Err "no section found in line"
-	[[ $section = *' '* ]] && Err "section cannot have spaces"
-	[[ -z $user ]] && Err "no user found in line"
+	[[ -z $dir ]] && Err "no directory found in line"
+	[[ $dir = *' '* ]] && Err "directory cannot have spaces"
+	[[ $dir = *,* ]] && Err "directory cannot have commas"
+	[[ -z $user ]] && Err "no username found in line"
 	[[ $user = *' '* ]] && Err "username cannot have spaces"
-	Add "$section" "$user"
+	[[ $user = *,* ]] && Err "username cannot have commas"
+	[[ $mail = *' '* ]] && Err "email cannot have spaces"
+	[[ $mail = *,* ]] && Err "email cannot have commas"
+	Add "$dir" "$user" "$email"
 done <"$csv"
 
 sudo pure-pw mkdb &&
 	echo "Database changes committed, PureFTPd is now using them" ||
 	Err "failure to commit changes to database"
-
-if ((purge))
-then # Purge if user with home dir not found in passwd
-	shopt -s nullglob
-	for dir in $home/*/*
-	do # For all virtual user directories
-		_=${dir#$home/} section=${_%/*} user=${_#*/}
-		# Skip if section directory or not top user directory
-		[[ -z $user || $user = */* ]] &&
-			continue
-		# If user under given section: skip it
-		sudo grep -q "^$user:.*:$dir/./:" "$passwd" &&
-			continue
-		sudo rm -rf "$dir" &&
-			echo "User directory '$dir' removed"
-	done
-	# If sections are empty, delete them altogether
-	for dir in $home/*
-	do # Remove section directory if empty
-		[[ ! ${dir#$home/} = */* ]] &&
-			sudo rmdir "$dir" 2>/dev/null &&
-			echo "Section directory '$dir' removed"
-	done
-fi
 
 # Mailing the details out
 read -p "Press Enter to send all the mails (Ctrl-C to quit)"
@@ -127,10 +99,15 @@ Blessings,
 The IT Team
 "
 
-for entry in "${entries[@]}"
+for entry in "${entries[@]}"  # "user,dir,pw,mail"
 do # Get data and mail it
-	_=${entry%%,*} mail=${_%/*}@crics.asia user=${_#*/} pw=${entry#*,}
-	txt=$(sed -e "s/USER/$user/" -e "s/PW/$pw/" <<<"$text")
-	mailer -m "$txt" -t $mail -s "Computer Science FTP login" -u $login -p $password
-	echo "Login details mailed to $mail"
+	IFS=, read -r mail user dir pw mail <<<"$entry"
+	if [[ $mail ]]
+	then
+		txt=$(sed -e "s/USER/$user/" -e "s/PW/$pw/" <<<"$text")
+		mailer -m "$txt" -t $mail -s "Computer Science FTP login" -u $login -p $password
+		echo "Login details for user '$user' on '$dir' mailed to: $mail"
+	else
+		echo "Password for user '$user' on '$dir' is: $pw"
+	fi
 done

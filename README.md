@@ -7,7 +7,7 @@
   - `lspdb.v`, `lspdb.zig` and `lspdb.c`: Sources for `lspdb`.
   - `lspdb`: Binary to list all entries in a PureDB database like `/etc/pureftpd.pdb`.
 * Files that will be added on the user side: `.netrc` and `pure.csv`
-* **There is also a `.deb` package `pure-ftpd`, but it's default locations are different!**
+* **There is also a `.deb` package `pure-ftpd`, but its default locations are different!**
 
 ## Prep for building
 ```
@@ -24,21 +24,21 @@ cp _pure-ftpd.conf pure-ftpd.conf
 sudo make install-strip
 ```
 
-## Have an A record for the URL in the DNS server for the domain
+## Have an A record for the DOMAIN in the DNS server for the domainroot
 
 ## Setup and run `caddy`
 * In `Caddyfile`:
 ```
-URL {
+DOMAIN {
 	root * /home/pureftp
-	redir / SOMEWEBPAGE
+	redir / https://SOMEWEBPAGE
 	file_server
 }
 ```
 * Start `caddy` when in the directory with the `Caddyfile`: `caddy start`
 
-## Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem (replace URL)
-`ln -sf /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/URL/URL.crt /etc/ssl/private/pure-ftpd.pem`
+## Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem (replace DOMAIN)
+`ln -sf /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/DOMAIN/DOMAIN.crt /etc/ssl/private/pure-ftpd.pem`
 
 ## Prep for the owner of the virtual users
 ```
@@ -60,17 +60,21 @@ sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 ## Manage Virtual Users
 
 ### Prep `.netrc` which is used in `purecsv`
-* Have 1 line with the bare URL (no scheme), like: `machine URL`
-* Have 1 line with the SMTP login email, like: `login EMAIL`
+* Have 1 line with the bare DOMAIN (no scheme), like: `machine DOMAIN`
+* Have 1 line with the SMTP login user, like: `login USERNAME`
 * Have 1 line with the SMTP password, like: `password PASSWORD`
 
-### Add/modify users with `pure.csv` file with lines: <section>,<username>
+### Add/modify users with `pure.csv` file with lines: <directory>,<username>,<email>
 `./purecsv`
 
-* If the line is prepended by `#` it is ignored.
-* If the line is prepended by `*` the login covers the whole section and all users in it.
-* If the line has `*` as its section, it designates the superuser `pureftp` over all sections.
-* Usernames have to be unique! (Otherwise the last one wins.)
+* If the line is prepended by `#` it is ignored as a comment.
+* `<dir>` is the directory that user `<username>` has authorization for. Examples:
+  - `/`: Covering all subdirectories (superadmin).
+  - `/cs7`: User with authorization over everything under `/cs7` (teacher).
+  - `/cs9/int`: User with authorization over `/cs9/int` (student).
+* Every `<username>` has to be unique! (Otherwise the last one wins.)
+* If `<email>` is filled in, an email is sent with the details for the virtual user.
+  Otherwise, the password will be printed to stdout.
 
 ### Users can also be edited directly
 `sudo nano /etc/pureftpd.passwd`
@@ -78,15 +82,9 @@ sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 ### Commit changes = make database (no restart needed)
 `sudo pure-pw mkdb`
 
-### Add one teacher
+### Add a user
 ```
-sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<section>
-# With flag `-m` the live database will get updated without doing `pure-pw mkdb`.
-```
-
-### Add one user
-```
-sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<section>/<username>
+sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<dir>
 # With flag `-m` the live database will get updated without doing `pure-pw mkdb`.
 ```
 
