@@ -21,7 +21,7 @@ Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd O:entries
 	then # Pretend
 		! sudo grep -q "^$user:" "$passwd" &&
 			echo "Would have added '$user' on '$dir' and created it" &&
-			entries+=("$mail,$user,$dir,$pw") ||
+			entries+=("$user,$dir,$pw,$mail") ||
 			echo "Username '$user' already exists"
 	else # Execute
 		if echo -e "$pw\n$pw" |
@@ -29,7 +29,7 @@ Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd O:entries
 		then # Adding successful
 			echo "User '$user' at '$home$dir' added to PureFTPd Virtual Users database"
 			sudo -u pureftp -g pureftp mkdir -p "$home$dir"
-			entries+=("$mail,$user,$dir,$pw")
+			entries+=("$user,$dir,$pw,$mail")
 		else # Error adding the user
 			echo "Unable to add username '$user' on '$dir', probably a duplicate user!"
 		fi
