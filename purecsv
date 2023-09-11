@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set +vx
 # purecsv - Make virtual FTP accounts and optionally mail out details
-# Usage: purecsv [-d|--delete]
+# Usage: purecsv [-d|--delete | -n|--norun]
+#        -n/--norun:   Only display what would have been done
 #        -d/--delete:  Delete all current users and start the database afresh.
 #        Otherwise current users' details are preserved (unless given new).
 #    Processes `pure.csv` (in PWD): [#]<directory>,<username>,[<email>]
@@ -14,48 +15,59 @@ Err(){ # 1:msg
 	exit 1
 }
 
-Add(){ # 1:dir 2:user 3:email I:home,delete
+Add(){ # 1:dir 2:user 3:email I:home,norun,delete
 	local dir=$1 user=$2 mail=$3 pw=$(mktemp -u XXXXXXXXXXXX)  # pw: No commas!
-	echo -e "$pw\n$pw" |sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null &&
-		echo "User '$user' at '$home$dir' added to PureFTPd Virtual Users database" &&
-		sudo -u pureftp -g pureftp mkdir -p "$home$dir" &&
-		entries+=("$mail,$user,$dir,$pw") &&
-		return
-	# Adding virtual user didn't work, so try to delete a pre-existing user
-	((!delete)) &&
-		echo "Username '$user' unchanged!" &&
-		return
-	# Delete user from database and then add it
-	! sudo pure-pw userdel "$user" &&
-		Err "cannot add or delete user '$user'"
-	echo "Old username '$user' deleted first"
-	Add "$1" "$2" "$3"
+	if ((norun))
+	then echo "Would have added: Username:$user Password:$pw Email:$mail Dir:$dir"
+	else
+		echo -e "$pw\n$pw" |sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null &&
+			echo "User '$user' at '$home$dir' added to PureFTPd Virtual Users database" &&
+			sudo -u pureftp -g pureftp mkdir -p "$home$dir" &&
+			entries+=("$mail,$user,$dir,$pw") &&
+			return
+		# Adding virtual user didn't work, so try to delete a pre-existing user
+		((!delete)) &&
+			echo "Username '$user' unchanged!" &&
+			return
+		# Delete user from database and then add it
+		! sudo pure-pw userdel "$user" &&
+			Err "cannot add or delete user '$user'"
+		echo "Old username '$user' deleted first"
+		Add "$1" "$2" "$3"
+	fi
 }
 
 # Check commandline argument
-passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 purge=0
+passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 norun=0
 [[ $2 ]] &&
-	Err "too many arguments, only -d/--delete / -p/--purge allowed"
+	Err "too many arguments, only -d/--delete / -n/--norun allowed"
 
 [[ $1 ]] &&
-	! [[ $1 = -d || $1 = --delete || $1 = -p || $1 = --purge ]] &&
-	Err "wrong argument, only -d|--delete | -p|--purge allowed"
+	! [[ $1 = -d || $1 = --delete || $1 = -n || $1 = --norun ]] &&
+	Err "wrong argument, only -d|--delete | -n|--norun allowed"
 
-[[ $1 ]] &&
+[[ $1 = -d || $1 = --delete ]] &&
 	delete=1
-[[ $1 = -p || $1 = --purge ]] &&
-	purge=1
+[[ $1 = -n || $1 = --norun ]] &&
+	norun=1
 [[ ! -f $csv ]] &&
 	Err "csv-file '$csv' not found"
 
-if ((delete))
-then # Start with empty database
-	sudo mv -f --backup=t "$passwd" "$passwd-backup"
-	sudo touch "$passwd"
-	echo "Database emptied, backup made"
-else # Just backup and keep the current database
-	sudo cp -f --backup=t "$passwd" "$passwd-backup"
-	echo "Database backup made"
+if ((norun))
+then
+	((delete)) &&
+		echo "Would have backed up '$passwd' to '$passwd-backup' and emptied the database" ||
+		echo "Would have backed up '$passwd' to '$passwd-backup'"
+else
+	if ((delete))
+	then # Start with empty database
+		sudo mv -f --backup=t "$passwd" "$passwd-backup"
+		sudo touch "$passwd"
+		echo "Database emptied, backup made"
+	else # Just backup and keep the current database
+		sudo cp -f --backup=t "$passwd" "$passwd-backup"
+		echo "Database backup made"
+	fi
 fi
 ls -l "$passwd"-*
 
@@ -75,12 +87,17 @@ do # Process line
 	Add "$dir" "$user" "$email"
 done <"$csv"
 
-sudo pure-pw mkdb &&
-	echo "Database changes committed, PureFTPd is now using them" ||
-	Err "failure to commit changes to database"
+if ((norun))
+then echo "Would have commit changes to PureFTPd"
+else
+	sudo pure-pw mkdb &&
+		echo "Database changes committed, PureFTPd is now using them" ||
+		Err "failure to commit changes to database"
+fi
 
 # Mailing the details out
-read -p "Press Enter to send all the mails (Ctrl-C to quit)"
+((!norun)) &&
+	read -p "Press Enter to send all the mails (Ctrl-C to quit)"
 
 _=$(grep '^machine ' .netrc) machine=${_##* }
 _=$(grep '^login ' .netrc) login=${_##* }
@@ -99,15 +116,22 @@ Blessings,
 The IT Team
 "
 
-for entry in "${entries[@]}"  # "user,dir,pw,mail"
+for entry in "${entries[@]}"  # "<user>,<dir>,<pw>,<mail>"
 do # Get data and mail it
 	IFS=, read -r mail user dir pw mail <<<"$entry"
-	if [[ $mail ]]
+	if ((norun))
 	then
-		txt=$(sed -e "s/USER/$user/" -e "s/PW/$pw/" <<<"$text")
-		mailer -m "$txt" -t $mail -s "Computer Science FTP login" -u $login -p $password
-		echo "Login details for user '$user' on '$dir' mailed to: $mail"
+		[[ $mail ]] &&
+			echo "Would have mailed: '$user' on '$dir' has password '$pw' to: $mail" ||
+			echo "Would have displayed: '$user' on '$dir' has password '$pw' to: $mail"
 	else
-		echo "Password for user '$user' on '$dir' is: $pw"
+		if [[ $mail ]]
+		then
+			txt=$(sed -e "s/USER/$user/" -e "s/PW/$pw/" <<<"$text")
+			((!norun)) && mailer -m "$txt" -t $mail -s "Computer Science FTP login" -u $login -p $password
+			echo "Login details for user '$user' on '$dir' mailed to: $mail"
+		else
+			echo "Password for user '$user' on '$dir' is: $pw"
+		fi
 	fi
 done

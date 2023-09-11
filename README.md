@@ -1,12 +1,12 @@
-# Setup for Computer Science FTP at CRICS
+# Batch setup for Virtual Users over a directory and email the details
 
 * Repo additions: `README.md _pure-ftpd.conf purecsv lspdb.v lspdb.zig lspdb.c lspdb`
   - `README.md`: Instructions for install and usage.
-  - `_pure-ftpd.conf`: Configuration for Virtual Users.
+  - `_pure-ftpd.conf`: Ready-made configuration for Virtual Users.
   - `purecsv`: Setup virtual accounts and mail out details.
   - `lspdb.v`, `lspdb.zig` and `lspdb.c`: Sources for `lspdb`.
   - `lspdb`: Binary to list all entries in a PureDB database like `/etc/pureftpd.pdb`.
-* Files that will be added on the user side: `.netrc` and `pure.csv`
+* Files that need to be added by the user for deployment: `.netrc` and `pure.csv`
 * **There is also a `.deb` package `pure-ftpd`, but its default locations are different!**
 
 ## Prep for building
@@ -26,8 +26,8 @@ sudo make install-strip
 
 ## Have an A record for the DOMAIN in the DNS server for the domainroot
 
-## Setup and run `caddy`
-* In `Caddyfile`:
+## Setup and run `caddy (v2)`
+* Add to `Caddyfile`:
 ```
 DOMAIN {
 	root * /home/pureftp
@@ -35,10 +35,10 @@ DOMAIN {
 	file_server
 }
 ```
-* Start `caddy` when in the directory with the `Caddyfile`: `caddy start`
+* Start `caddy` when in the directory with the `Caddyfile` by: `caddy start`
 
 ## Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem (replace DOMAIN)
-`ln -sf /root/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/DOMAIN/DOMAIN.crt /etc/ssl/private/pure-ftpd.pem`
+`sudo ln -sf ~/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/DOMAIN/DOMAIN.crt /etc/ssl/private/pure-ftpd.pem`
 
 ## Prep for the owner of the virtual users
 ```
@@ -60,6 +60,7 @@ sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 ## Manage Virtual Users
 
 ### Prep `.netrc` which is used in `purecsv`
+* Needed if details need to be emailed out (alternative: output passwords to stdout)
 * Have 1 line with the bare DOMAIN (no scheme), like: `machine DOMAIN`
 * Have 1 line with the SMTP login user, like: `login USERNAME`
 * Have 1 line with the SMTP password, like: `password PASSWORD`
