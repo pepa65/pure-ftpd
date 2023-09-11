@@ -15,11 +15,11 @@ Err(){ # 1:msg
 	exit 1
 }
 
-Add(){ # 1:dir 2:user 3:email I:home,norun,delete,passwd O:entries
+Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd O:entries
 	local user=$1 dir=$2 mail=$3 pw=$(mktemp -u XXXXXXXXXXXX)  # pw: No commas!
 	if ((norun))
 	then # Pretend
-		sudo grep -q "^$user:" "$passwd" &&
+		! sudo grep -q "^$user:" "$passwd" &&
 			echo "Would have added '$user' on '$dir' and created it" &&
 			entries+=("$mail,$user,$dir,$pw") ||
 			echo "Username '$user' already exists"
