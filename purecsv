@@ -16,7 +16,7 @@ Err(){ # 1:msg
 }
 
 Add(){ # 1:dir 2:user 3:email I:home,norun,delete,passwd O:entries
-	local dir=$1 user=$2 mail=$3 pw=$(mktemp -u XXXXXXXXXXXX)  # pw: No commas!
+	local user=$1 dir=$2 mail=$3 pw=$(mktemp -u XXXXXXXXXXXX)  # pw: No commas!
 	if ((norun))
 	then # Pretend
 		sudo grep -q "^$user:" "$passwd" &&
@@ -76,10 +76,10 @@ else # Execute
 	ls -l "$passwd"-*
 fi
 
-while IFS=, read -r -d $'\n' dir user email
+while IFS=, read -r -d $'\n' user dir email
 do # Process line
 	[[ ${dir:0:1} = '#' ]] &&
-		echo "Comment: $dir,$user,$email" &&
+		echo "Comment: $user,$dir,$email" &&
 		continue
 	[[ -z $dir ]] && Err "no directory found in line"
 	[[ $dir = *' '* ]] && Err "directory cannot have spaces"
@@ -89,7 +89,7 @@ do # Process line
 	[[ $user = *,* ]] && Err "username cannot have commas"
 	[[ $mail = *' '* ]] && Err "email cannot have spaces"
 	[[ $mail = *,* ]] && Err "email cannot have commas"
-	Add "$dir" "$user" "$email"
+	Add "$user" "$dir" "$email"
 done <"$csv"
 
 if ((norun))

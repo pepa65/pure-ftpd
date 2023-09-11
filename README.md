@@ -37,8 +37,9 @@ DOMAIN {
 ```
 * Start `caddy` when in the directory with the `Caddyfile` by: `caddy start`
 
-## Symlink the domain certificate to /etc/ssl/private/pure-ftpd.pem (replace DOMAIN)
-`sudo ln -sf ~/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/DOMAIN/DOMAIN.crt /etc/ssl/private/pure-ftpd.pem`
+## Symlink the domain certificate
+* Symlink the SSL certificate to /etc/ssl/private/pure-ftpd.pem
+* Replace DOMAIN in this command: `sudo ln -sf ~/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/DOMAIN/DOMAIN.crt /etc/ssl/private/pure-ftpd.pem`
 
 ## Prep for the owner of the virtual users
 ```
@@ -68,13 +69,13 @@ sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 ### Add/modify users with `purecsv` and `pure.csv`
 
 #### Configfile `pure.csv`
-* Lines with: <directory>,<username>,<email>
+* If the line is prepended by `#` it is ignored as a comment.
+* Lines with: <username>,<directory>,<email>
+* Every `<username>` has to be unique! (Only the first gets added.)
 * `<directory>` is the directory that user `<username>` has authorization for. Examples:
   - `/`: Covering all subdirectories (superadmin).
   - `/cs7`: User with authorization over everything under `/cs7` (teacher).
   - `/cs9/int`: User with authorization over `/cs9/int` (student).
-* If the line is prepended by `#` it is ignored as a comment.
-* Every `<username>` has to be unique! (Only the first gets added.)
 * If `<email>` is filled in, an email is sent with the details for the virtual user.
   Otherwise, the password will be printed to stdout.
 
