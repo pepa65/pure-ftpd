@@ -5,7 +5,7 @@ set +vx
 #        -n/--norun:   Only display what would have been done
 #        -d/--delete:  Delete all current users and start the database afresh.
 #        Otherwise current users' details are preserved (unless given new).
-#    Processes `pure.csv` (in PWD): [#]<directory>,<username>,[<email>]
+#    Processes `pure.csv` (in PWD): [#]<username>,<directory>,[<email>]
 #        Lines starting with '#' are ignored. Always start <directory> with '/'.
 # Required: pureftp[github.com/pepa65/pure-ftpd](pure-pw) grep sed
 #           mailer[github.com/pepa65/mailer] coreutils(mkdir rm mv cp mktemp touch)
@@ -21,8 +21,8 @@ Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd O:entries
 	then # Pretend
 		! sudo grep -q "^$user:" "$passwd" &&
 			echo "Would have added '$user' on '$dir' and created the directory" &&
-			entries+=("$user,$dir,$pw,$mail") ||
-			echo "Username '$user' already exists"
+				entries+=("$user,$dir,$pw,$mail") ||
+					echo "Username '$user' already exists"
 	else # Execute
 		if echo -e "$pw\n$pw" |
 				sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null
@@ -40,16 +40,16 @@ Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd O:entries
 passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 norun=0
 [[ $1 = -d || $1 = --delete ]] &&
 	shift &&
-	delete=1
+		delete=1
 [[ $1 = -n || $1 = --norun ]] &&
 	shift &&
-	norun=1
+		norun=1
 if [[ $1 = -d || $1 = --delete ]]
 then
 	shift
 	((delete)) &&
 		delete=1 ||
-		Err "flag -d/--delete given twice!"
+			Err "flag -d/--delete given twice!"
 fi
 
 [[ $1 ]] &&
@@ -62,7 +62,7 @@ if ((norun))
 then # Pretend
 	((delete)) &&
 		echo "Would have backed up '$passwd' to '$passwd-backup' and emptied the database" ||
-		echo "Would have backed up '$passwd' to '$passwd-backup'"
+			echo "Would have backed up '$passwd' to '$passwd-backup'"
 else # Execute
 	if ((delete))
 	then # Start with empty database
@@ -76,19 +76,23 @@ else # Execute
 	ls -l "$passwd"-*
 fi
 
-while IFS=, read -r -d $'\n' user dir email
+while IFS=, read -r -d $'\n' user dir email err
 do # Process line
 	[[ ${dir:0:1} = '#' ]] &&
 		echo "Comment: $user,$dir,$email" &&
-		continue
-	[[ -z $dir ]] && Err "no directory found in line"
-	[[ $dir = *' '* ]] && Err "directory cannot have spaces"
-	[[ $dir = *,* ]] && Err "directory cannot have commas"
-	[[ -z $user ]] && Err "no username found in line"
-	[[ $user = *' '* ]] && Err "username cannot have spaces"
-	[[ $user = *,* ]] && Err "username cannot have commas"
-	[[ $mail = *' '* ]] && Err "email cannot have spaces"
-	[[ $mail = *,* ]] && Err "email cannot have commas"
+			continue
+	[[ $err ]] &&
+		Err "only 2 commas allowed per line to separate the 3 fields"
+	[[ ! ${dir:0:1} = '/' ]] &&
+		Err "directory does not start with '/'"
+	[[ $dir = *' '* ]] &&
+		Err "directory cannot have spaces"
+	[[ -z $user ]] &&
+		Err "no username found in line"
+	[[ $user = *' '* ]] &&
+		Err "username cannot have spaces"
+	[[ $mail = *' '* ]] &&
+		Err "email cannot have spaces"
 	Add "$user" "$dir" "$email"
 done <"$csv"
 
@@ -98,7 +102,7 @@ then # Pretend
 else # Execute
 	sudo pure-pw mkdb &&
 		echo "Database changes committed, PureFTPd is now using them" ||
-		Err "failure to commit changes to database"
+			Err "failure to commit changes to database"
 fi
 
 # Mailing the details out
@@ -129,12 +133,13 @@ do # Get data and mail it
 	then # Pretend
 		[[ $mail ]] &&
 			echo "Would have mailed the password for '$user' on '$dir' to: $mail" ||
-			echo "Would have displayed the password for '$user' on '$dir'"
+				echo "Would have displayed the password for '$user' on '$dir'"
 	else # Execute
 		if [[ $mail ]]
 		then
 			txt=$(sed -e "s/USER/$user/" -e "s/PW/$pw/" <<<"$text")
-			((!norun)) && mailer -m "$txt" -t $mail -s "Computer Science FTP login" -u $login -p $password
+			((!norun)) &&
+				mailer -m "$txt" -t $mail -s "Computer Science FTP login" -u $login -p $password
 			echo "Login details for user '$user' on '$dir' mailed to: $mail"
 		else
 			echo "Password for user '$user' on '$dir' is: $pw"
