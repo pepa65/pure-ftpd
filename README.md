@@ -93,13 +93,15 @@ sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 `sudo pure-pw mkdb`
 
 ### Add a user
-```
-sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<dir>
-# With flag `-m` the live database will get updated without doing `pure-pw mkdb`.
-```
+`sudo pure-pw useradd <username> -u pureftp -g pureftp -d /home/pureftp/<dir>`
+
+With flag `-m` the live database will get updated without needing `pure-pw mkdb`.
 
 ### Change/reset user password (also updates the live database)
 `sudo pure-pw passwd <username> -m`
+
+### Delete a user
+`sudo pure-pw userdel <username> -m`
 
 ### See who is active
 `sudo pure-ftpwho`
