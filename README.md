@@ -5,6 +5,7 @@
   - `_pure-ftpd.conf`: Ready-made configuration for Virtual Users.
   - `purecsv`: Setup virtual accounts and mail out details.
   - `lspdb.v`, `lspdb.zig` and `lspdb.c`: Sources for `lspdb`.
+		(For build instructions, see the comments at the top of the files.)
   - `lspdb`: Binary to list all entries in a PureDB database like `/etc/pureftpd.pdb`.
 * Files that need to be added by the user for deployment: `.netrc` and `pure.csv`
 * **There is also a `.deb` package `pure-ftpd`, but its default locations are different!**
