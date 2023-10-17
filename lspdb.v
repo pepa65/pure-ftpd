@@ -2,23 +2,24 @@
 // Build for local use: v -cc clang -prod lspdb.v
 // Build for wider distribution: v -cc clang -cflags -static -prod lspdb.v
 
+import encoding.binary
 import os
 
 fn getquad(db []u8, addr u32) u32 {
 	if addr+4 > db.len {
-		eprintln('Error: PureDB database is corrupted')
+		eprintln('Error: bad address, PureDB database is corrupted')
 		exit(3)
 	}
-	return u32(db[addr])<<24 + u32(db[addr+1])<<16 + u32(db[addr+2])<<8 + db[addr+3]
+	return binary.big_endian_u32_at(db, int(addr))
 }
 
 fn out(db []u8, addr u32, len u32) {
 	if addr+len > db.len {
-		eprintln('Error: PureDB database is corrupted')
+		eprintln('Error: bad length, PureDB database is corrupted')
 		exit(4)
 	}
 	for i in addr..addr+len {
-		print(db[i].ascii_str())
+		print_character(db[i])
 	}
 }
 
