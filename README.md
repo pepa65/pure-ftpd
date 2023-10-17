@@ -1,5 +1,6 @@
 # Batch setup for Virtual Users over a directory and email the details
 
+* Modified from https://github.com/jedisct1/pure-ftpd
 * Repo additions: `README.md _pure-ftpd.conf purecsv lspdb.v lspdb.zig lspdb.c lspdb`
   - `README.md`: Instructions for install and usage.
   - `_pure-ftpd.conf`: Ready-made configuration for Virtual Users.
@@ -11,7 +12,7 @@
 
 ## Prep for building
 ```
-apt install automake libssl-dev
+apt install automake libssl-dev libsodium-dev
 git clone https://github.com/pepa65/pure-ftpd
 cd pure-ftpd
 ```
@@ -24,9 +25,9 @@ cp _pure-ftpd.conf pure-ftpd.conf
 sudo make install-strip
 ```
 
-## Have an A record for the DOMAIN in the DNS server for the domainroot
-
 ## Setup and run `caddy (v2)`
+
+* **Have an A record for DOMAIN in the DNS server for the domainroot**
 * Add to `Caddyfile`:
 ```
 DOMAIN {
@@ -35,6 +36,9 @@ DOMAIN {
 	file_server
 }
 ```
+* The `redir` can be used to show whatever page you'd like to display on the root.
+  If the `redir` line is removed and the `file_server` line replaced by `file_server browse`
+  then the filesystem is exposed to browsers.
 * Start `caddy` when in the directory with the `Caddyfile` by: `caddy start`
 
 ## Symlink the domain certificate
@@ -52,8 +56,12 @@ sudo useradd -g pureftp -d /dev/null -s /bin/false pureftp
 ### Start (chroot everyone, daemonize, list dotfiles, only auth-users, no whois, make home, PureDB-auth)
 ```
 sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
-# Add this to /root/atreboot, perhaps with `pkill -x pure-ftpd` before it
 ```
+### Automatically start pure-ftpd on reboot
+* Add `@reboot  /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb` to
+  root's crontab.
+* Add the above line to `/root/atreboot`, perhaps with `pkill -x pure-ftpd` before it and
+  add `@reboot  /root/atreboot` to root's crontab.
 
 ### Stop
 `sudo pkill -x pure-ftpd`
