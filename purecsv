@@ -1,28 +1,32 @@
 #!/usr/bin/env bash
 set +vx
 # purecsv - Make virtual FTP accounts and optionally mail out details
-# Usage: purecsv [-d|--delete] [-n|--norun]
+# Usage: purecsv [-d|--delete | -f|--force] [-n|--norun]
 #        -n/--norun:   Only display what would have been done
 #        -d/--delete:  Delete all current users and start the database afresh.
-#        Otherwise current users' details are preserved (unless given new).
+#        -f/--force:   Force new password also to existing users.
+#        Otherwise current users' details are preserved.
 #    Processes `pure.csv` (in PWD): [#]<username>,<directory>,[<email>]
 #        Lines starting with '#' are ignored. Always start <directory> with '/'.
 # Required: pureftp[github.com/pepa65/pure-ftpd](pure-pw) grep sed
 #           mailer[github.com/pepa65/mailer] coreutils(mkdir rm mv cp mktemp touch)
 
 Err(){ # 1:msg
+	echo "Usage:  purecsv [-d|--delete | -f|--force] [-n|--norun]"
 	echo "Error: $1"
 	exit 1
 }
 
-Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd O:entries
+Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd,force O:entries
 	local user=$1 dir=$2 mail=$3 pw=$(mktemp -u XXXXXXXXXXXX)  # pw: No commas!
 	if ((norun))
 	then # Pretend
 		! sudo grep -q "^$user:" "$passwd" &&
 			echo "Would have added '$user' on '$dir' and created the directory" &&
-				entries+=("$user,$dir,$pw,$mail") ||
-					echo "Username '$user' already exists"
+			entries+=("$user,$dir,$pw,$mail") ||
+			echo "Username '$user' already exists"
+		((force)) &&
+			echo "Would have renewed the password"
 	else # Execute
 		if echo -e "$pw\n$pw" |
 				sudo pure-pw useradd "$user" -u pureftp -d "$home$dir" &>/dev/null
@@ -31,32 +35,36 @@ Add(){ # 1:user 2:dir 3:email I:home,norun,delete,passwd O:entries
 			sudo -u pureftp -g pureftp mkdir -p "$home$dir"
 			entries+=("$user,$dir,$pw,$mail")
 		else # Error adding the user
-			echo "Unable to add username '$user' on '$dir', probably a duplicate user!"
+			if ((force))
+			then # Couldn't add, just change the password if forced
+				echo -e "$pw\n$pw" |
+					sudo pure-pw passwd "$user" &>/dev/null &&
+					entries+=("$user,$dir,$pw,$mail") &&
+					echo "Password of user '$user' changed" ||
+					echo "Problem changing password of user '$user'"
+			else
+				echo "Unable to add username '$user' on '$dir', probably a duplicate user!"
+			fi
 		fi
 	fi
 }
 
-# Check commandline argument
-passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv delete=0 norun=0
-[[ $1 = -d || $1 = --delete ]] &&
-	shift &&
-		delete=1
-[[ $1 = -n || $1 = --norun ]] &&
-	shift &&
-		norun=1
-if [[ $1 = -d || $1 = --delete ]]
-then
-	shift
-	((delete)) &&
-		delete=1 ||
-			Err "flag -d/--delete given twice!"
-fi
-
-[[ $1 ]] &&
-	Err "wrong argument, only -d/--delete / -n/--norun allowed (once)"
-
+passwd=/etc/pureftpd.passwd home=/home/pureftp csv=pure.csv
 [[ ! -f $csv ]] &&
 	Err "csv-file '$csv' not found"
+
+# Check commandline argument
+delete=0 norun=0 force=0
+while ((${#@}))
+do
+	case $1 in
+	-d|--delete) delete=1 ;;
+	-n|--norun) norun=1 ;;
+	-f|--force) force=1 ;;
+	*) Err "Unknown flag: $1"
+	esac
+	shift
+done
 
 if ((norun))
 then # Pretend
@@ -107,6 +115,7 @@ fi
 
 # Mailing the details out
 ((!norun)) &&
+	echo "${entries[@]}" |tr ' ' '\n'
 	read -p "Press Enter to send all the mails (Ctrl-C to quit)"
 
 _=$(grep '^machine ' .netrc) machine=${_##* }

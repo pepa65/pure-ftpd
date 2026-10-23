@@ -91,6 +91,7 @@ sudo /usr/local/sbin/pure-ftpd -A -B -D -E -H -j -lpuredb:/etc/pureftpd.pdb
 #### Run `purecsv`
 * Usage: `./purecsv [-d|--delete | -n|--norun]`
 * Option `-d`/`--delete`: Backup and then empty out the existing database.
+* Option `-f`/`--force`: Renew the password also of existing users.
 * Option `-n`/`--norun`: Just display what would have happened.
 * Run: `./purecsv` (Only new users are added, existing users are left alone.)
 
